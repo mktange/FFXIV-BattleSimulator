@@ -1,6 +1,6 @@
 ﻿
 
-interface EntityIndicator extends IEntity {
+interface EntityIndicator extends Updateable {
   
 }
 

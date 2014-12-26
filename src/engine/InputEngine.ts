@@ -19,6 +19,10 @@
      this.bind(38, 'move-up');
      this.bind(39, 'move-right');
      this.bind(40, 'move-down');
+
+     // Special actions
+     this.bind(88, 'special-x'); // X
+     this.bind(67, 'special-c'); // C
      
 
      canvas.addEventListener('keydown', this.onKey(this, true));

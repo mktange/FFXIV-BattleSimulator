@@ -47,6 +47,13 @@ class Vector2D {
     this.y += unit.y * distance;
   }
 
+  toSize(size: number): Vector2D {
+    var unit = this.toUnit();
+    unit.x *= size;
+    unit.y *= size;
+    return unit;
+  }
+
   angleTo(other: Vector2D): number {
     return Math.atan2(other.x - this.x, other.y - this.y);
   }

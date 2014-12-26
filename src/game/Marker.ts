@@ -1,5 +1,5 @@
 ﻿
-class Marker implements IEntity {
+class Marker implements Updateable {
   letter: string;
 
   private RADIUS = 10;

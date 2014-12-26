@@ -1,25 +1,33 @@
 ﻿/// <reference path="liveentity.ts" />
-/// <reference path="../engine/drawingutils.ts" />
-/// <reference path="entity.ts" />
+/// <reference path="updateable.ts" />
+/// <reference path="enemytype.ts" />
 
 
-class Enemy extends LiveEntity implements IEntity {
+class Enemy extends LiveEntity implements Updateable {
 
-  constructor(public pos: Vector2D, public face: number, public range: number, public speed: number) {
-    super(pos, face, range, speed);
+  constructor(enemyType: EnemyType, pos: Vector2D, face: number) {
+    super(pos, face, enemyType.range, enemyType.speed, enemyType.size, "orange");
   }
 
   update(delta: number): void {
-    if (this.target === undefined) return;
+    if (this.target === undefined || this.target === null) return;
 
-    this.face = this.pos.angleTo(this.target.pos);
-    var dist = this.pos.distanceTo(this.target.pos) - this.range;
+    var myPos = this.getPos();
+    var tPos = this.target.getPos();
+
+    this.face = myPos.angleTo(tPos);
+    var diff = myPos.getDiff(tPos);
+    var dist = diff.length() - this.range;
     if (dist > 0) {
-      this.pos.moveTowards(this.target.pos, Math.min(dist, this.speed * delta));
+      this.move = diff.toSize(Math.min(dist, this.speed * delta));
+    } else {
+      this.move.x = 0;
+      this.move.y = 0;
     }
+    super.update(delta);
   }
 
   draw(context: CanvasRenderingContext2D): void {
-    fillCircleWithFace(context, this.pos.x, this.pos.y, 15, "red", this.face);
+    super.draw(context);
   }
 }

@@ -1,24 +1,32 @@
 ﻿
 
 enum Job {
-  TANK, HEALER, DD
+  WHM, SCH, WAR, PLD, BLM, SMN, BRD, MNK, DRG, NIN
 }
 
-//interface Job {
-//  abilities: Ability[];
-//}
 
-//class Tank implements Job {
-//  abilities: Ability[];
-//  color = "blue";
-//}
+function getJobRange(job: Job): number {
+  switch (job) {
+    case Job.WHM:
+    case Job.SCH:
+    case Job.BLM:
+    case Job.SMN:
+    case Job.BRD:
+      return 500;
+    default:
+      return 50;
+  }
+}
 
-//class Healer implements Job {
-//  abilities: Ability[];
-//  color = "green";
-//}
-
-//class DamageDealer implements Job {
-//  abilities: Ability[];
-//  color = "red";
-//}
+function getJobColor(job: Job): string {
+  switch (job) {
+    case Job.WHM:
+    case Job.SCH:
+      return "green";
+    case Job.PLD:
+    case Job.WAR:
+      return "blue";
+    default:
+      return "red";
+  }
+}
