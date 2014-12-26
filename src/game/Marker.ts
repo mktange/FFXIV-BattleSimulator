@@ -1,8 +1,14 @@
 ﻿
-
-class Marker {
+class Marker implements IEntity {
   letter: string;
-  pos: Position2D;
 
   private RADIUS = 10;
+
+  update(delta: number) {
+
+  }
+
+  draw(context: CanvasRenderingContext2D) {
+
+  }
 }

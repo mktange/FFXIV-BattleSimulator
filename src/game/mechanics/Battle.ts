@@ -1,7 +1,7 @@
 ﻿
 
 class Battle {
-  arena: Arena;
-  players: Player[];
-  enemies: Enemy[];
+
+  constructor(public arena: ArenaShape, public players: Player[], public enemies: Enemy[], public events: FightEvent[]) {
+  }
 }

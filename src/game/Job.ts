@@ -1,22 +1,24 @@
 ﻿
 
-
-
-interface Job {
-  abilities: Ability[];
+enum Job {
+  TANK, HEALER, DD
 }
 
-class Tank implements Job {
-  abilities: Ability[];
-  color = "blue";
-}
+//interface Job {
+//  abilities: Ability[];
+//}
 
-class Healer implements Job {
-  abilities: Ability[];
-  color = "green";
-}
+//class Tank implements Job {
+//  abilities: Ability[];
+//  color = "blue";
+//}
 
-class DamageDealer implements Job {
-  abilities: Ability[];
-  color = "red";
-}
+//class Healer implements Job {
+//  abilities: Ability[];
+//  color = "green";
+//}
+
+//class DamageDealer implements Job {
+//  abilities: Ability[];
+//  color = "red";
+//}

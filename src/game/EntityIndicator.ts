@@ -1,13 +1,25 @@
 ﻿
 
-class EntityIndicator {
-
+interface EntityIndicator extends IEntity {
+  
 }
 
-class LineIndicator extends EntityIndicator {
+class LineIndicator implements EntityIndicator {
+  update(delta: number) {
 
+  }
+
+  draw(context: CanvasRenderingContext2D) {
+
+  }
 }
 
-class HeadIndicator extends EntityIndicator {
-   
+class HeadIndicator implements EntityIndicator {
+  update(delta: number) {
+
+  }
+
+  draw(context: CanvasRenderingContext2D) {
+
+  }
 }

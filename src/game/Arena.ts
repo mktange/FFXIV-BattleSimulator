@@ -14,6 +14,8 @@ class RectangleArena implements ArenaShape {
   }
 }
 
+
+
 class Arena {
   shape: ArenaShape;
 

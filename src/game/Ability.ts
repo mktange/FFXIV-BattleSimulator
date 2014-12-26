@@ -17,12 +17,12 @@ interface AbilityTarget {
 }
 
 class GroundTarget implements AbilityTarget {
-  pos: Position2D;
+  pos: Vector2D;
   radius: number;
 }
 
 class EntityTarget implements AbilityTarget {
-  entity: Entity;
+  entity: LiveEntity;
 }
 
 
