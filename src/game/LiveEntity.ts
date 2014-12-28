@@ -1,5 +1,6 @@
 ﻿/// <reference path="statuseffect.ts" />
 /// <reference path="ability.ts" />
+/// <reference path="../engine/vector2d.ts" />
 
 
 
@@ -27,7 +28,8 @@ class LiveEntity implements Updateable {
   update(delta: number) {
     var distance: number;
     if (this.accMove) {
-      this.move = this.accMove.dir;
+      this.move.x = this.accMove.dir.x;
+      this.move.y = this.accMove.dir.y;
       distance = this.accMove.vel * delta;
 
       this.accMove.vel += this.accMove.acc;
