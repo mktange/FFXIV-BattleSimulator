@@ -1,8 +1,8 @@
 ﻿ 
 
  class InputEngine {
-   bindings: {};
-   actions: {};
+   bindings: { [code: number]: string };
+   actions: { [id: string]: boolean; };
 
    constructor(canvas: HTMLCanvasElement) {
      this.bindings = {};

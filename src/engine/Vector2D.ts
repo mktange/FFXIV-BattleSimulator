@@ -47,6 +47,18 @@ class Vector2D {
     this.y += unit.y * distance;
   }
 
+  add(other: Vector2D): Vector2D {
+    return new Vector2D(this.x + other.x, this.y + other.y);
+  }
+
+  subtract(other: Vector2D): Vector2D {
+    return new Vector2D(this.x - other.x, this.y - other.y);
+  }
+
+  scale(factor: number): Vector2D {
+    return new Vector2D(this.x * factor, this.y * factor);
+  }
+
   toSize(size: number): Vector2D {
     var unit = this.toUnit();
     unit.x *= size;

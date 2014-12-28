@@ -6,12 +6,14 @@ class BattleEngine implements Updateable {
   private controlable: Player;
   private players: Player[];
   private enemies: Enemy[];
+  private liveEntities: LiveEntity[];
   private entities: Updateable[];
 
   constructor() {
     this.players = [];
     this.enemies = [];
     this.entities = [];
+    this.liveEntities = [];
   }
 
   update(delta: number) {
@@ -43,11 +45,6 @@ class BattleEngine implements Updateable {
     return newPlayer;
   }
 
-  private addPlayerDirect(player: Player) {
-    this.players.push(player);
-    this.entities.push(player);
-  }
-
   setControlablePlayer(player: Player): void {
     if (this.players.indexOf(player) < 0) {
       this.addPlayerDirect(player);
@@ -57,8 +54,29 @@ class BattleEngine implements Updateable {
 
   addEnemy(enemyType: EnemyType, pos: Vector2D, face: number): Enemy {
     var enemy = new Enemy(enemyType, pos, face);
-    this.enemies.push(enemy);
-    this.entities.push(enemy);
+    this.addEnemyDirect(enemy);
     return enemy;
+  }
+
+
+
+  private addPlayerDirect(player: Player) {
+    this.players.push(player);
+    this.entities.push(player);
+    this.liveEntities.push(player);
+  }
+
+  private addEnemyDirect(enemy: Enemy) {
+    this.players.push(enemy);
+    this.entities.push(enemy);
+    this.liveEntities.push(enemy);
+  }
+
+  getPlayers(): Player[] {
+    return this.players;
+  }
+
+  getLiveEntities(): LiveEntity[] {
+    return this.liveEntities;
   }
 }

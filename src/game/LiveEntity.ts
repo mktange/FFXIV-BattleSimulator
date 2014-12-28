@@ -1,6 +1,5 @@
 ﻿/// <reference path="statuseffect.ts" />
 /// <reference path="ability.ts" />
-/// <reference path="../engine/vector2d.ts" />
 
 
 
@@ -8,9 +7,11 @@ class LiveEntity implements Updateable {
   move: Vector2D;
 
   statusEffects: StatusEffect[];
-  
-  abilities: Ability[];
+
+  abilities: { [id: string] : Ability };
   target: LiveEntity;
+
+  activeAbility: ActiveAbility;
 
   accMove: AcceleratedMovement;
 
@@ -18,18 +19,34 @@ class LiveEntity implements Updateable {
     public range: number, public speed: number, public size: number, public color: string) {
     this.move = new Vector2D(0, 0);
     this.statusEffects = [];
-    this.abilities = [];
+    this.abilities = {};
     this.accMove = null;
+    this.activeAbility = null;
   }
 
   update(delta: number) {
+    var distance: number;
     if (this.accMove) {
-      this.pos.moveInDir(this.accMove.dir, this.accMove.vel * delta);
-      this.accMove.vel += this.accMove.acc;
-      if (this.accMove.vel < 0) this.accMove = null;
+      this.move = this.accMove.dir;
+      distance = this.accMove.vel * delta;
 
-    } else if (this.move.x || this.move.y) {
-      this.pos.moveInDir(this.move, Math.min(this.move.length(), this.speed * delta));
+      this.accMove.vel += this.accMove.acc;
+      if (this.accMove.vel <= 0) this.accMove = null;
+
+    } else {
+      distance = Math.min(this.move.length(), this.speed * delta);
+    }
+
+    if (this.move.x || this.move.y) {
+      this.cancelActiveAbility();
+      this.pos.moveInDir(this.move, distance);
+
+    } else if (this.activeAbility) {
+      this.activeAbility.spentTime += delta;
+      if (this.activeAbility.spentTime >= this.activeAbility.ability.castTime) {
+        this.activeAbility.ability.castEnd(this.activeAbility.engine);
+        this.activeAbility = null;
+      }
     }
   }
 
@@ -40,6 +57,31 @@ class LiveEntity implements Updateable {
   getPos(): Vector2D {
     return this.pos;
   }
+
+  useAbility(name: string, engine: BattleEngine): boolean {
+    var ability = this.abilities[name];
+
+    if (ability && this.target && this.pos.distanceTo(this.target.pos) <= ability.range) {
+      ability.castStart(this, engine);
+      this.activeAbility = {
+        ability: ability,
+        spentTime: 0,
+        engine: engine,
+      }
+      return true;
+    }
+    return false;
+  }
+
+  private cancelActiveAbility(): void {
+    this.activeAbility = null;
+  }
+}
+
+interface ActiveAbility {
+  ability: Ability;
+  spentTime: number;
+  engine: BattleEngine;
 }
 
 interface AcceleratedMovement {
