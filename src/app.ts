@@ -19,12 +19,45 @@ var player = battleEngine.addPlayer(Job.WAR, new Vector2D(500, 500), 0);
 
 battleEngine.setControlablePlayer(player);
 battleEngine.addPlayer(Job.BLM, new Vector2D(800, 500), 0);
-battleEngine.addPlayer(Job.WHM, new Vector2D(200, 500), 0);
+//battleEngine.addPlayer(Job.WHM, new Vector2D(200, 500), 0);
 
 
 var enemyType = new EnemyType("Nael", 210 / 1000, 15, 40);
 var enemy = battleEngine.addEnemy(enemyType, new Vector2D(500, 100), 0);
 enemy.target = player;
+
+var chargeMechanics = <AbilityMechanics>{};
+chargeMechanics.getTargets = function (caster, engine) {
+  var possibleTargets = engine.getPlayers().filter(p => {
+    return p != caster.target && p.job != Job.WAR && p.job != Job.PLD
+  });
+
+  var selected = Math.floor(Math.random() * possibleTargets.length);
+  return [new EntityTarget(possibleTargets[selected])];
+};
+
+chargeMechanics.castStart = function (instance) {
+  var cPos = instance.caster.getPos();
+  var tPos = instance.getAffectedTargets()[0].getPos();
+  instance.caster.face = cPos.angleTo(tPos);
+  instance.data["speed"] = cPos.distanceTo(tPos) / 500;
+  instance.data["time"] = 0;
+}
+
+chargeMechanics.castExecution = function (instance, delta) {
+  instance.data["time"] += delta;
+  var time: number = instance.data["time"];
+  if (time <= 500) {
+    var speed: number = instance.data["speed"];
+    instance.caster.move = Vector2D.unitFromAngle(instance.caster.face);
+    instance.caster.move.toSize(speed * delta);
+    return false;
+  }
+  return true;
+}
+
+var charge = new Ability(chargeMechanics, 1.5 * 1000, false, 3 * 1000);
+enemy.abilities["charge"] = charge;
 
 
 
@@ -62,12 +95,7 @@ function render(delta: number): boolean {
   debug.innerHTML = "FPS: " + fps;
 
   if (inputEngine.actions["special-x"] && player.accMove === null) {
-    player.accMove =
-    {
-      dir: new Vector2D(Math.random() * 2 - 1, Math.random() * 2 - 1),
-      vel: parseFloat(speed.value),
-      acc: -parseFloat(deacc.value),
-    }
+    enemy.useAbility("charge", battleEngine);
   }
 
   battleEngine.update(delta);

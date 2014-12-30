@@ -6,11 +6,13 @@
 
 class Player extends LiveEntity implements Updateable {
   
-  constructor(job: Job, pos: Vector2D, face: number) {
+  constructor(public job: Job, pos: Vector2D, face: number) {
     super(pos, face, getJobRange(job), 200 / 1000, 10, getJobColor(job));
   }
 
   update(delta: number) {
+    this.cancelCast();
+    this.move.toSize(this.speed * delta);
     super.update(delta);
   }
 

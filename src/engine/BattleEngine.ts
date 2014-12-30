@@ -67,7 +67,7 @@ class BattleEngine implements Updateable {
   }
 
   private addEnemyDirect(enemy: Enemy) {
-    this.players.push(enemy);
+    this.enemies.push(enemy);
     this.entities.push(enemy);
     this.liveEntities.push(enemy);
   }

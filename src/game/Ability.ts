@@ -1,21 +1,89 @@
-﻿
+﻿/// <reference path="abilitytarget.ts" />
+
+interface AbilityMechanics {
+  getTargets: (caster: LiveEntity, engine: BattleEngine) => AbilityTarget[];
+  castStart?: (instance: AbilityInstance) => void;
+  castEnd?: (instance: AbilityInstance) => void;
+
+  // Should return true if the execution is done, false otherwise
+  castExecution?: (instance: AbilityInstance, delta: number) => boolean;
+}
+
 
 class Ability {
-  castTime: number;
-  range: number;
+  constructor(public mechanics: AbilityMechanics, public castTime: number, public indicator = false, public prepTime = 0, public range = Number.MAX_VALUE) {
+    if (!this.mechanics.castStart) this.mechanics.castStart = function () { };
+    if (!this.mechanics.castEnd) this.mechanics.castEnd = function () { };
+    if (!this.mechanics.castExecution) this.mechanics.castExecution = function () { return true; };
+  }
+
+  createInstance(caster: LiveEntity, engine: BattleEngine): AbilityInstance {
+    return new AbilityInstance(caster, this, engine);
+  }
+
+}
+
+
+
+
+class AbilityInstance {
   targets: AbilityTarget[];
-  indicator: boolean;
+  data: { [id: string] : any };
 
-  castStart: (e: LiveEntity, engine: BattleEngine) => void;
-  castEnd: (engine: BattleEngine) => void;
+  private timeTracker: number;
+  private updateFunc: (delta: number) => boolean;
+    
 
+  constructor(public caster: LiveEntity, private ability: Ability, public engine: BattleEngine) {
+    this.updateFunc = this.prepFunc;
+    this.timeTracker = 0;
+    this.data = {};
+    this.targets = this.ability.mechanics.getTargets(this.caster, this.engine);
+  }
 
-  getAffectedTargets(engine: BattleEngine): LiveEntity[]{
+  update(delta: number): boolean {
+    return this.updateFunc(delta);
+  }
+
+  private prepFunc(delta: number): boolean {
+    this.timeTracker += delta;
+    if (this.timeTracker < this.ability.prepTime) {
+      return false;
+    } else {
+      this.updateFunc = this.castFunc;
+      this.timeTracker -= this.ability.prepTime;
+      this.ability.mechanics.castStart(this);
+      this.caster.move.x = 0;
+      this.caster.move.y = 0;
+      return this.updateFunc(0);
+    }
+  }
+
+  private castFunc(delta: number): boolean {
+    this.timeTracker += delta;
+    if (this.timeTracker < this.ability.castTime) {
+      return false;
+    } else {
+      this.updateFunc = this.executeFunc;
+      this.ability.mechanics.castEnd(this);
+      return this.updateFunc(this.timeTracker - this.ability.castTime);
+    }
+  }
+
+  private executeFunc(delta: number): boolean {
+    return this.ability.mechanics.castExecution(this, delta);
+  }
+
+  isPreparing(): boolean {
+    return this.updateFunc === this.prepFunc;
+  }
+
+  getAffectedTargets(): LiveEntity[] {
     var allTargets = [];
     if (this.targets) {
-      allTargets = this.targets[0].getAffectedEntities(engine);
+      allTargets = this.targets[0].getAffectedEntities(this.engine);
       this.targets.slice(1)
-        .forEach(at => at.getAffectedEntities(engine)
+        .forEach(at => at.getAffectedEntities(this.engine)
           .forEach(e => {
             if (allTargets.indexOf(e) < 0) allTargets.push(e);
           }));
@@ -24,71 +92,3 @@ class Ability {
   }
 }
 
-
-
-/*
-  Targeting
-*/
-
-
-interface AbilityTarget {
-  getAffectedEntities(engine: BattleEngine): LiveEntity[];
-}
-
-
-class EntityTarget implements AbilityTarget {
-  entity: LiveEntity;
-
-  getAffectedEntities(engine: BattleEngine): LiveEntity[] {
-    return [this.entity];
-  }
-}
-
-class CircleTarget implements AbilityTarget {
-  pos: Vector2D;
-  radius: number;
-
-  getAffectedEntities(engine: BattleEngine): LiveEntity[] {
-    return engine.getLiveEntities().filter(e => {
-      return this.pos.distanceTo(e.getPos()) <= this.radius;
-    });
-  }
-}
-
-
-class ConeTarget implements AbilityTarget {
-  pos: Vector2D;
-  direction: number;
-  angleSize: number;
-  radius: number;
-
-  getAffectedEntities(engine: BattleEngine): LiveEntity[] {
-    var minAngle = (this.direction - this.angleSize / 2 + 2 * Math.PI) % (2 * Math.PI)
-    var maxAngle = (this.direction + this.angleSize / 2) % (2 * Math.PI)
-
-    return engine.getLiveEntities().filter(e => {
-      if (this.pos.distanceTo(e.getPos()) > this.radius) return false;  
-
-      var angleTo = this.pos.angleTo(e.getPos());
-      if (minAngle < maxAngle) {
-        return minAngle <= angleTo && angleTo <= maxAngle;
-      } else {
-        return minAngle <= angleTo || angleTo <= maxAngle;
-      }
-    });
-  }
-}
-
-class LineTarget implements AbilityTarget {
-  rect: Rectangle
-
-  constructor(origin: Vector2D, direction: number, width: number, length: number) {
-    this.rect = Rectangle.fromLineOrigin(origin, direction, width, length);
-  }
-
-  getAffectedEntities(engine: BattleEngine): LiveEntity[] {
-    return engine.getLiveEntities().filter(e => {
-      return this.rect.contains(e.getPos());
-    });
-  }
-}

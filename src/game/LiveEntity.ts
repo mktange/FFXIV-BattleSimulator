@@ -12,8 +12,7 @@ class LiveEntity implements Updateable {
   abilities: { [id: string] : Ability };
   target: LiveEntity;
 
-  activeAbility: ActiveAbility;
-
+  activeAbility: AbilityInstance;
   accMove: AcceleratedMovement;
 
   constructor(private pos: Vector2D, public face: number,
@@ -26,31 +25,30 @@ class LiveEntity implements Updateable {
   }
 
   update(delta: number) {
-    var distance: number;
+    if (this.activeAbility) {
+      var isDone = this.activeAbility.update(delta);
+      if (isDone) this.activeAbility = null;
+    }
+
+    this.calcMove(delta);
+    if (this.move.x || this.move.y) {
+      this.pos.add(this.move);
+      this.face = this.move.getAngle();
+      this.move.x = 0;
+      this.move.y = 0;
+    }
+  }
+
+  private calcMove(delta: number) {
     if (this.accMove) {
-      this.move.x = this.accMove.dir.x;
-      this.move.y = this.accMove.dir.y;
-      distance = this.accMove.vel * delta;
+      this.move.setTo(this.accMove.dir);
+      this.move.toSize(this.accMove.vel * delta);
 
       this.accMove.vel += this.accMove.acc;
       if (this.accMove.vel <= 0) this.accMove = null;
-
-    } else {
-      distance = Math.min(this.move.length(), this.speed * delta);
-    }
-
-    if (this.move.x || this.move.y) {
-      this.cancelActiveAbility();
-      this.pos.moveInDir(this.move, distance);
-
-    } else if (this.activeAbility) {
-      this.activeAbility.spentTime += delta;
-      if (this.activeAbility.spentTime >= this.activeAbility.ability.castTime) {
-        this.activeAbility.ability.castEnd(this.activeAbility.engine);
-        this.activeAbility = null;
-      }
     }
   }
+
 
   draw(context: CanvasRenderingContext2D) {
     fillCircleWithFace(context, this.pos.x, this.pos.y, this.size, this.color, this.face);
@@ -64,27 +62,19 @@ class LiveEntity implements Updateable {
     var ability = this.abilities[name];
 
     if (ability && this.target && this.pos.distanceTo(this.target.pos) <= ability.range) {
-      ability.castStart(this, engine);
-      this.activeAbility = {
-        ability: ability,
-        spentTime: 0,
-        engine: engine,
-      }
+      this.activeAbility = ability.createInstance(this, engine);
       return true;
     }
     return false;
   }
 
-  private cancelActiveAbility(): void {
-    this.activeAbility = null;
+  cancelCast(): void {
+    if (this.activeAbility) {
+      this.activeAbility = null;
+    }
   }
 }
 
-interface ActiveAbility {
-  ability: Ability;
-  spentTime: number;
-  engine: BattleEngine;
-}
 
 interface AcceleratedMovement {
   dir: Vector2D;

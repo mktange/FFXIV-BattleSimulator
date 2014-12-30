@@ -26,13 +26,21 @@ class Vector2D {
     return this.getDiff(other).length();
   }
 
-  toUnit(): Vector2D {
+  toUnit(): void {
+    var len = this.length();
+    this.x /= len;
+    this.y /= len;
+  }
+
+  getUnit(): Vector2D {
     var len = this.length();
     return new Vector2D(this.x / len, this.y / len);
   }
 
   getUnitDirection(other: Vector2D): Vector2D {
-    return this.getDiff(other).toUnit();
+    var vec = this.getDiff(other);
+    vec.toUnit();
+    return vec;
   }
 
   moveTowards(other: Vector2D, distance: number): void {
@@ -42,35 +50,54 @@ class Vector2D {
   }
 
   moveInDir(dir: Vector2D, distance: number): void {
-    var unit = dir.toUnit();
+    var unit = dir.getUnit();
     this.x += unit.x * distance;
     this.y += unit.y * distance;
   }
 
-  add(other: Vector2D): Vector2D {
-    return new Vector2D(this.x + other.x, this.y + other.y);
+  add(other: Vector2D): void {
+    this.x += other.x;
+    this.y += other.y;
   }
 
-  subtract(other: Vector2D): Vector2D {
-    return new Vector2D(this.x - other.x, this.y - other.y);
+  subtract(other: Vector2D): void {
+    this.x -= other.x;
+    this.y -= other.y;
   }
 
-  scale(factor: number): Vector2D {
-    return new Vector2D(this.x * factor, this.y * factor);
+  scale(factor: number): void {
+    this.x *= factor;
+    this.y *= factor;
+  }
+
+  static add(v1: Vector2D, v2: Vector2D): Vector2D {
+    return new Vector2D(v1.x + v2.x, v1.y + v2.y);
+  }
+
+  static subtract(v1: Vector2D, v2: Vector2D): Vector2D {
+    return new Vector2D(v1.x - v2.x, v1.y - v2.y);
+  }
+
+  static scale(v1: Vector2D, factor: number): Vector2D {
+    return new Vector2D(v1.x * factor, v1.y * factor);
   }
 
   toSize(size: number): Vector2D {
-    var unit = this.toUnit();
-    unit.x *= size;
-    unit.y *= size;
-    return unit;
+    this.toUnit();
+    this.scale(size);
+    return this;
   }
 
   angleTo(other: Vector2D): number {
     return Math.atan2(other.x - this.x, other.y - this.y);
   }
 
-  normal(): Vector2D {
+  getNormal(): Vector2D {
     return new Vector2D(-this.y, this.x);
+  }
+
+  setTo(other: Vector2D) {
+    this.x = other.x;
+    this.y = other.y;
   }
 }

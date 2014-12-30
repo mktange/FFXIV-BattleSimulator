@@ -15,15 +15,17 @@ class Enemy extends LiveEntity implements Updateable {
 
   update(delta: number): void {
     if (this.target) {
+
       if (this.queuedAbility && this.getPos().distanceTo(this.target.getPos()) <= this.queuedAbility.range) {
+        // Try to execute queued ability
         var success = super.useAbility(this.queuedAbility.name, this.queuedAbility.engine);
         if (success) this.queuedAbility = null;
 
-      } else if (!this.activeAbility) {
+      } else if (!this.activeAbility || this.activeAbility.isPreparing()) {
+        // Move towards target
         var myPos = this.getPos();
         var tPos = this.target.getPos();
 
-        this.face = myPos.angleTo(tPos);
         var diff = myPos.getDiff(tPos);
         var dist = diff.length() - this.range;
         if (dist > 0) {
