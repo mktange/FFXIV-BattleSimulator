@@ -12,22 +12,22 @@ class LiveEntity implements Updateable {
   abilities: { [id: string] : Ability };
   target: LiveEntity;
 
-  activeAbility: AbilityInstance;
+  castingAbility: AbilityInstance;
   accMove: AcceleratedMovement;
 
-  constructor(private pos: Vector2D, public face: number,
+  constructor(public name: string, private pos: Vector2D, public face: number,
     public range: number, public speed: number, public size: number, public color: string) {
     this.move = new Vector2D(0, 0);
     this.statusEffects = [];
     this.abilities = {};
     this.accMove = null;
-    this.activeAbility = null;
+    this.castingAbility = null;
   }
 
   update(delta: number) {
-    if (this.activeAbility) {
-      var isDone = this.activeAbility.update(delta);
-      if (isDone) this.activeAbility = null;
+    if (this.castingAbility) {
+      var isDone = this.castingAbility.update(delta);
+      if (isDone) this.castingAbility = null;
     }
 
     this.calcMove(delta);
@@ -58,19 +58,19 @@ class LiveEntity implements Updateable {
     return this.pos;
   }
 
-  useAbility(name: string, engine: BattleEngine): boolean {
-    var ability = this.abilities[name];
-
-    if (ability && this.target && this.pos.distanceTo(this.target.pos) <= ability.range) {
-      this.activeAbility = ability.createInstance(this, engine);
+  // Attempt to cast the ability.
+  // Returns false if entity is already casting, it has no target or target is out of range
+  castAbility(abilityInstance: AbilityInstance): boolean {
+    if (!this.castingAbility && abilityInstance && this.target && this.pos.distanceTo(this.target.pos) <= abilityInstance.getRange()) {
+      this.castingAbility = abilityInstance;
       return true;
     }
     return false;
   }
 
   cancelCast(): void {
-    if (this.activeAbility) {
-      this.activeAbility = null;
+    if (this.castingAbility) {
+      this.castingAbility = null;
     }
   }
 }

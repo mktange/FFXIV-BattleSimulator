@@ -1,5 +1,6 @@
 ﻿/// <reference path="../game/player.ts" />
 /// <reference path="../game/enemy.ts" />
+/// <reference path="updateable.ts" />
 
 
 class BattleEngine implements Updateable {
@@ -39,8 +40,8 @@ class BattleEngine implements Updateable {
     this.entities.forEach(x => x.draw(context));
   }
 
-  addPlayer(job: Job, pos: Vector2D, face: number): Player {
-    var newPlayer = new Player(job, pos, face);
+  addPlayer(name: string, job: Job, pos: Vector2D, face: number): Player {
+    var newPlayer = new Player(name, job, pos, face);
     this.addPlayerDirect(newPlayer);
     return newPlayer;
   }

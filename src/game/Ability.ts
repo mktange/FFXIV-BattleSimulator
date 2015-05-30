@@ -2,7 +2,10 @@
 
 interface AbilityMechanics {
   getTargets: (caster: LiveEntity, engine: BattleEngine) => AbilityTarget[];
+
+  prep?: (instance: AbilityInstance, delta: number) => void;
   castStart?: (instance: AbilityInstance) => void;
+  midCast?: (instance: AbilityInstance, delta: number) => void;
   castEnd?: (instance: AbilityInstance) => void;
 
   // Should return true if the execution is done, false otherwise
@@ -11,8 +14,16 @@ interface AbilityMechanics {
 
 
 class Ability {
-  constructor(public mechanics: AbilityMechanics, public castTime: number, public indicator = false, public prepTime = 0, public range = Number.MAX_VALUE) {
+  constructor(
+      public name: string,
+      public mechanics: AbilityMechanics,
+      public castTime: number,
+      public indicator = false,
+      public prepTime = 0,
+      public range = Number.MAX_VALUE) {
+    if (!this.mechanics.prep) this.mechanics.prep = function () { };
     if (!this.mechanics.castStart) this.mechanics.castStart = function () { };
+    if (!this.mechanics.midCast) this.mechanics.midCast = function () { };
     if (!this.mechanics.castEnd) this.mechanics.castEnd = function () { };
     if (!this.mechanics.castExecution) this.mechanics.castExecution = function () { return true; };
   }
@@ -25,8 +36,10 @@ class Ability {
 
 
 
-
+// Active instance of an ability
 class AbilityInstance {
+  name: string;
+
   targets: AbilityTarget[];
   data: { [id: string] : any };
 
@@ -35,10 +48,20 @@ class AbilityInstance {
     
 
   constructor(public caster: LiveEntity, private ability: Ability, public engine: BattleEngine) {
-    this.updateFunc = this.prepFunc;
+    this.name = ability.name;
     this.timeTracker = 0;
     this.data = {};
+    
     this.targets = this.ability.mechanics.getTargets(this.caster, this.engine);
+
+    if (this.ability.prepTime > 0) {
+      this.updateFunc = this.prepFunc;
+      if (this.caster instanceof Enemy) {
+        logger.log(this.name + " started preparing " + this.name + ".");
+      }
+    } else {
+      this.updateFunc = this.queuedFunc;
+    }
   }
 
   update(delta: number): boolean {
@@ -48,20 +71,38 @@ class AbilityInstance {
   private prepFunc(delta: number): boolean {
     this.timeTracker += delta;
     if (this.timeTracker < this.ability.prepTime) {
+      this.ability.mechanics.prep(this, delta);
       return false;
     } else {
-      this.updateFunc = this.castFunc;
       this.timeTracker -= this.ability.prepTime;
-      this.ability.mechanics.castStart(this);
-      this.caster.move.x = 0;
-      this.caster.move.y = 0;
+      this.updateFunc = this.queuedFunc;
       return this.updateFunc(0);
     }
+  }
+
+  private queuedFunc(delta: number): boolean {
+    var castSuccess = this.caster.castAbility(this);
+    if (castSuccess) {
+      if (this.caster instanceof Enemy) {
+        logger.log(this.name + " started casting " + this.name + ".");
+      }
+      this.updateFunc = this.castFunc;
+      this.caster.move.x = 0;
+      this.caster.move.y = 0;
+
+      this.ability.mechanics.castStart(this);
+      return this.updateFunc(delta)
+    } else {
+      this.updateFunc = this.queuedFunc;
+      this.timeTracker = 0;
+    }
+    return false;
   }
 
   private castFunc(delta: number): boolean {
     this.timeTracker += delta;
     if (this.timeTracker < this.ability.castTime) {
+      this.ability.mechanics.midCast(this, delta);
       return false;
     } else {
       this.updateFunc = this.executeFunc;
@@ -78,6 +119,10 @@ class AbilityInstance {
     return this.updateFunc === this.prepFunc;
   }
 
+  isCasting(): boolean {
+    return this.updateFunc === this.castFunc;
+  }
+
   getAffectedTargets(): LiveEntity[] {
     var allTargets = [];
     if (this.targets) {
@@ -89,6 +134,10 @@ class AbilityInstance {
           }));
     }
     return allTargets;
+  }
+
+  getRange(): number {
+    return this.ability.range;
   }
 }
 

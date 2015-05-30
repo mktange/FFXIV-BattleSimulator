@@ -1,28 +1,34 @@
 ﻿/// <reference path="liveentity.ts" />
-/// <reference path="updateable.ts" />
 /// <reference path="enemytype.ts" />
+/// <reference path="../engine/updateable.ts" />
 
 
 class Enemy extends LiveEntity implements Updateable {
 
-  queuedAbility: QueuedAbility;
+  preppingAbilities: AbilityInstance[];
+  queuedAbilities: AbilityInstance[];
 
   constructor(enemyType: EnemyType, pos: Vector2D, face: number) {
-    super(pos, face, enemyType.range, enemyType.speed, enemyType.size, "orange");
-    this.queuedAbility = null;
+    super(enemyType.name, pos, face, enemyType.range, enemyType.speed, enemyType.size, "orange");
+    this.preppingAbilities = [];
+    this.queuedAbilities = [];
   }
 
 
   update(delta: number): void {
+    this.preppingAbilities.forEach(a => a.update(delta));
+    this.preppingAbilities = this.preppingAbilities.filter(a => a.isPreparing());
+
+    if (this.queuedAbilities.length > 0) {
+      // Try to execute queued ability
+      var instance = this.queuedAbilities[0];
+      var castSuccess = super.castAbility(instance);
+      if (castSuccess) this.queuedAbilities = this.queuedAbilities.slice(1);
+    }
+
     if (this.target) {
-
-      if (this.queuedAbility && this.getPos().distanceTo(this.target.getPos()) <= this.queuedAbility.range) {
-        // Try to execute queued ability
-        var success = super.useAbility(this.queuedAbility.name, this.queuedAbility.engine);
-        if (success) this.queuedAbility = null;
-
-      } else if (!this.activeAbility || this.activeAbility.isPreparing()) {
-        // Move towards target
+      if (!this.castingAbility) {
+        // Move towards target if not casting anything
         var myPos = this.getPos();
         var tPos = this.target.getPos();
 
@@ -43,23 +49,20 @@ class Enemy extends LiveEntity implements Updateable {
     super.draw(context);
   }
 
-  useAbility(name: string, engine: BattleEngine): boolean {
-    var executed = super.useAbility(name, engine);
+  startAbility(name: string, engine: BattleEngine): boolean {
     var ability = this.abilities[name];
-    if (!executed && ability && !this.queuedAbility) {
-      this.queuedAbility = {
-        name: name,
-        engine: engine,
-        range: ability.range,
-      }
-      return true;
+    if (!ability) {
+      console.log("Unknown ability: '" + name + "'");
+      return;
     }
-    return false;
-  }
-}
 
-interface QueuedAbility {
-  name: string;
-  engine: BattleEngine;
-  range: number;
+    var instance = ability.createInstance(this, engine);
+    if (instance.isCasting()) {
+      var castSuccess = super.castAbility(instance);
+      if (!castSuccess) this.queuedAbilities.push(instance);
+
+    } else {
+      this.preppingAbilities.push(instance);
+    }
+  }
 }

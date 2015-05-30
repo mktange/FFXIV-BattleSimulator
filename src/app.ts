@@ -2,27 +2,25 @@
 /// <reference path="game/enemy.ts" />
 /// <reference path="game/player.ts" />
 /// <reference path="engine/battleengine.ts" />
+/// <reference path="engine/logger.ts" />
 
 var canvas: HTMLCanvasElement;
 var context: CanvasRenderingContext2D;
 
-var debug: HTMLSpanElement;
-var speed: HTMLInputElement;
-var deacc: HTMLInputElement;
+var logger: Logger;   
 
 var inputEngine: InputEngine;
-var fps = 0;
-
+var fps: number;
 
 var battleEngine = new BattleEngine();
-var player = battleEngine.addPlayer(Job.WAR, new Vector2D(500, 500), 0);
+var player = battleEngine.addPlayer("Tank", Job.WAR, new Vector2D(500, 500), 0);
 
 battleEngine.setControlablePlayer(player);
-battleEngine.addPlayer(Job.BLM, new Vector2D(800, 500), 0);
+battleEngine.addPlayer("BLM", Job.BLM, new Vector2D(800, 500), 0);
 //battleEngine.addPlayer(Job.WHM, new Vector2D(200, 500), 0);
 
 
-var enemyType = new EnemyType("Nael", 210 / 1000, 15, 40);
+var enemyType = new EnemyType("Imtoogood", 210 / 1000, 15, 40);
 var enemy = battleEngine.addEnemy(enemyType, new Vector2D(500, 100), 0);
 enemy.target = player;
 
@@ -56,7 +54,7 @@ chargeMechanics.castExecution = function (instance, delta) {
   return true;
 }
 
-var charge = new Ability(chargeMechanics, 1.5 * 1000, false, 3 * 1000);
+var charge = new Ability("Charge", chargeMechanics, 1.5 * 1000, false, 3 * 1000);
 enemy.abilities["charge"] = charge;
 
 
@@ -64,27 +62,11 @@ enemy.abilities["charge"] = charge;
 window.onload = () => {
   var container = document.getElementById("content");
 
-  debug = document.createElement("div");
-  debug.style.clear = "both";
-  container.appendChild(debug);
-
-  speed = document.createElement("input");
-  speed.id = "speed";
-  speed.type = "text";
-  speed.value = "0.4";
-  speed.style.clear = "both";
-  container.appendChild(speed);
-
-  deacc = document.createElement("input");
-  deacc.id = "deacc";
-  deacc.type = "text";
-  deacc.value = "0.01";
-  deacc.style.clear = "both";
-  container.appendChild(deacc);
-
   canvas = initCanvas();
   context = canvas.getContext("2d");
-  
+
+  logger = new Logger(document.getElementById("logger"));
+
   mainLoop(render);
 };
 
@@ -92,10 +74,9 @@ window.onload = () => {
 
 function render(delta: number): boolean {
   context.clearRect(0, 0, canvas.width, canvas.height);
-  debug.innerHTML = "FPS: " + fps;
-
+  
   if (inputEngine.actions["special-x"] && player.accMove === null) {
-    enemy.useAbility("charge", battleEngine);
+    enemy.startAbility("charge", battleEngine);
   }
 
   battleEngine.update(delta);
@@ -132,14 +113,16 @@ function mainLoop(render: (number) => boolean): void {
 
 function initCanvas(): HTMLCanvasElement {
   var canvas = document.createElement("canvas");
-
   canvas.id = "canvas";
-  canvas.width = 1000;
+  canvas.width = 1024;
   canvas.height = 768;
-  canvas.style.position = "absolute";
-  canvas.style.border = "1px solid";
   canvas.tabIndex = 1;
   inputEngine = new InputEngine(canvas);
+
+  //canvas.onclick = (ev) => {
+  //  logger.log("Player at: " + player.getPos().x.toFixed(2) + ", " + player.getPos().y.toFixed(2));
+  //  logger.log("Clicked at: " + ev.offsetX.toFixed(2) + ", " + ev.offsetY.toFixed(2));
+  //}
   
   document.getElementById("content").appendChild(canvas);
   return canvas;
